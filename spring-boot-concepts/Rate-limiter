@@ -1,0 +1,128 @@
+# Rate Limiter
+
+## What is a Rate Limiter?
+A **Rate Limiter** is a mechanism used to **control the number of requests or actions** a system, API, or service can handle in a given time frame. It helps prevent **abuse, overload, and denial-of-service (DoS) attacks**.
+
+## Why Use a Rate Limiter?
+1. **Prevents Overloading** – Protects services from too many requests that can crash the system.
+2. **Enhances Security** – Mitigates brute-force attacks and bot abuses.
+3. **Ensures Fair Usage** – Distributes requests fairly among users.
+4. **Optimizes Performance** – Helps maintain stable response times.
+
+## How Rate Limiting Works
+Rate limiting controls the **number of allowed requests per unit of time**.  
+For example:
+- **"Max 100 requests per minute per user"**
+- **"Only 10 login attempts per hour"**
+- **"50 API calls per second per IP"**
+
+## Rate Limiting Algorithms
+### 1. Token Bucket (Most Common)
+- A bucket is filled with tokens at a **fixed rate**.
+- Each request **consumes a token**.
+- If the bucket is empty, the request is denied or delayed.
+
+✅ **Best for:** APIs with occasional bursts of traffic but needing a steady overall rate.  
+
+### 2. Leaky Bucket
+- Requests are processed **at a fixed rate** (like water leaking from a bucket).
+- If too many requests arrive at once, they are queued or dropped.
+
+✅ **Best for:** Ensuring a **constant** request processing rate.
+
+### 3. Fixed Window
+- A **time window (e.g., 1 minute)** is defined.
+- The system allows a **fixed number of requests** within the window.
+- If the limit is reached, further requests are rejected until the next window.
+
+✅ **Best for:** Simplicity and predictable enforcement.
+
+### 4. Sliding Window
+- Similar to Fixed Window but **moves dynamically** over time.
+- Counts requests in a **rolling window** instead of resetting after a fixed time.
+
+✅ **Best for:** More **evenly distributed request handling**.
+
+## Rate Limiting in Spring Boot
+### 1. Spring Boot + Bucket4j
+- **Bucket4j** is a Java library for token bucket-based rate limiting.
+
+#### Example Using Bucket4j in a Spring Boot API:
+```java
+import io.github.bucket4j.*;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
+
+@RestController
+@RequestMapping("/api")
+public class RateLimitedController {
+
+    private final Bucket bucket;
+
+    public RateLimitedController() {
+        // Allow 5 requests per minute
+        this.bucket = Bucket4j.builder()
+                .addLimit(Bandwidth.classic(5, Refill.intervally(5, Duration.ofMinutes(1))))
+                .build();
+    }
+
+    @GetMapping("/limited")
+    public String limitedEndpoint() {
+        if (bucket.tryConsume(1)) {
+            return "Request successful!";
+        } else {
+            return "Too many requests! Try again later.";
+        }
+    }
+}
+```
+
+### 2. Spring Boot + Resilience4j
+- **Resilience4j RateLimiter** helps rate-limit methods.
+
+#### Example Using Resilience4j:
+```java
+@RateLimiter(name = "myRateLimiter")
+@GetMapping("/rate-limited")
+public String rateLimitedEndpoint() {
+    return "Allowed request!";
+}
+```
+- Define limits in `application.yml`:
+```yaml
+resilience4j.ratelimiter.instances.myRateLimiter:
+  limitForPeriod: 5
+  limitRefreshPeriod: 1m
+```
+
+## Where is Rate Limiting Used?
+✅ **APIs & Microservices** – Prevent API abuse  
+✅ **Authentication Systems** – Limit login attempts  
+✅ **Messaging Queues** – Prevent flooding  
+✅ **E-Commerce** – Prevent bots from buying everything instantly  
+✅ **Scraping Prevention** – Stop excessive web scraping  
+
+## Do You Need to Learn Algorithms for a System Design Interview?
+### How Much Algorithm Knowledge is Needed?
+System design interviews focus on architecture, but a **basic understanding of algorithms** helps in making informed decisions.
+
+### Key Algorithms & Concepts to Know for System Design
+| **Category** | **Concepts & Algorithms** | **Why It’s Important?** |
+|-------------|-------------------------|-------------------------|
+| **Database & Storage** | **B-Trees, LSM Trees, Bloom Filters** | Used in indexing (MySQL, Cassandra, etc.) |
+| **Caching & Consistency** | **LRU, LFU, FIFO, Consistent Hashing** | Optimizing performance & distributed caching |
+| **Load Balancing** | **Round-robin, Least Connection, IP Hashing** | Distributing requests efficiently |
+| **Distributed Systems** | **Paxos, Raft, Gossip Protocol** | Leader election, consensus in microservices |
+| **Sharding & Partitioning** | **Modulo-based, Range-based, Hash-based sharding** | Scaling databases horizontally |
+| **Search & Logging** | **Inverted Index, Trie, Merkle Trees** | Used in search engines (Elasticsearch) and verification |
+| **Rate Limiting** | **Token Bucket, Leaky Bucket, Sliding Window** | API protection & throttling |
+
+## Summary
+- A **Rate Limiter** controls the number of requests within a given time.
+- **Algorithms:** Token Bucket, Leaky Bucket, Fixed Window, Sliding Window.
+- **Spring Boot Integration:** Use **Bucket4j or Resilience4j**.
+- Used in **APIs, authentication, and security mechanisms**.
+- **For System Design Interviews:** Understanding **application, trade-offs, and performance considerations** is key.
+
+Would you like a **learning roadmap** for system design? 🚀
